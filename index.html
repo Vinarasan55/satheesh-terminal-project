@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Shift Report Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: #010409;
+    color: #e6edf3;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1117; }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid #21262d;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: #00ff88;
+    letter-spacing: 0.05em;
+  }
+  .logo-sub { font-size: 10px; color: #484f58; margin-top: 2px; letter-spacing: 0.1em; }
+  .header-right { font-size: 11px; color: #484f58; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid #21262d;
+    padding: 0 24px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #8b949e;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    padding: 12px 20px;
+    text-transform: uppercase;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab-btn.active { border-bottom-color: #00ff88; color: #00ff88; }
+
+  /* CONTENT */
+  .content { max-width: 820px; margin: 0 auto; padding: 24px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* SECTION */
+  .section {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #00ff88;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { width: 6px; height: 6px; background: #00ff88; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  @media (max-width: 600px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* FORM ELEMENTS */
+  label {
+    display: block;
+    font-size: 10px;
+    color: #8b949e;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  input, select, textarea {
+    width: 100%;
+    background: #010409;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #e6edf3;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #00ff88; }
+  input::placeholder { color: #484f58; }
+  select option { background: #0d1117; }
+
+  /* ISSUE CARD */
+  .issue-card {
+    background: #010409;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .issue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .issue-num { font-size: 11px; color: #484f58; }
+
+  /* BUTTONS */
+  .btn-primary {
+    background: #00ff88;
+    border: none;
+    border-radius: 6px;
+    color: #010409;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 20px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover { background: #00cc6f; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid #00ff88;
+    border-radius: 6px;
+    color: #00ff88;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    transition: background 0.2s;
+  }
+  .btn-secondary:hover { background: rgba(0,255,136,0.08); }
+
+  .btn-danger {
+    background: transparent;
+    border: 1px solid #f85149;
+    border-radius: 4px;
+    color: #f85149;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .btn-add {
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px;
+    background: transparent;
+    border: 1px dashed #30363d;
+    border-radius: 6px;
+    color: #8b949e;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-add:hover { border-color: #00ff88; color: #00ff88; }
+
+  .btn-full { width: 100%; }
+
+  /* PREVIEW */
+  .preview-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .preview-box {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .preview-label {
+    font-size: 10px;
+    color: #484f58;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  #preview-output {
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.9;
+    color: #e6edf3;
+  }
+
+  .field-group { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">⚡ SHIFT REPORT</div>
+    <div class="logo-sub">TERMINAL MONITORING AUTOMATION</div>
+  </div>
+  <div class="header-right">🌬️ Wind Farm Operations</div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('form')">📝 Form Input</button>
+  <button class="tab-btn" onclick="switchTab('preview')">👁️ Preview & Export</button>
+</div>
+
+<div class="content">
+
+  <!-- FORM TAB -->
+  <div class="tab-panel active" id="tab-form">
+
+    <!-- Basic Info -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Basic Info</div>
+      <div class="grid-2 field-group">
+        <div>
+          <label>Terminal Name</label>
+          <select id="terminal">
+            <option value="Terminal 1 _*Devarkulam">Terminal 1 - Devarkulam</option>
+            <option value="Terminal 2 _*Muthayampatty">Terminal 2 - Muthayampatty</option>
+            <option value="Terminal 3 _*Villiseri">Terminal 3 - Villiseri</option>
+          </select>
+        </div>
+        <div>
+          <label>Monitored By</label>
+          <select id="monitor">
+            <option value="">-- Select --</option>
+            <option>Satheesh Vinnarasan</option>
+            <option>Sahaya Ditto</option>
+            <option>Velmurugan</option>
+            <option>Saravanan</option>
+            <option>Moorthy</option>
+            <option>Esakki Archana</option>
+            <option>Vijayapathi</option>
+            <option>Lakshmi</option>
+            <option>Dhanusiya</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div>
+          <label>Date (DD/MM/YY)</label>
+          <input type="text" id="date" placeholder="29/03/26" />
+        </div>
+        <div>
+          <label>Shift</label>
+          <select id="shift" onchange="onShiftChange()">
+            <option>First</option>
+            <option selected>Second</option>
+            <option>Third</option>
+          </select>
+        </div>
+        <div>
+          <label>Last Park Monitor Time</label>
+          <input type="text" id="lastPark" placeholder="22:00" />
+        </div>
+      </div>
+    </div>
+
+    <!-- WTG & Feeder -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> WTG & Feeder Status</div>
+      <div class="grid-3">
+        <div>
+          <label>WTGs Stopped</label>
+          <input type="text" id="wtgStopped" placeholder="06" value="00" />
+        </div>
+        <div>
+          <label>Major WTGs</label>
+          <input type="text" id="wtgMajor" placeholder="00" value="00" />
+        </div>
+        <div>
+          <label>Feeder BD</label>
+          <input type="text" id="feederBD" value="NIL" />
+        </div>
+        <div>
+          <label>Feeder LC</label>
+          <input type="text" id="feederLC" value="NIL" />
+        </div>
+        <div>
+          <label>Reduced Power Count</label>
+          <input type="text" id="reducedCount" placeholder="01" value="00" />
+        </div>
+        <div>
+          <label>Reduced Power WTGs</label>
+          <input type="text" id="reducedWTGs" placeholder="MAN067" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Connectivity -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Connectivity Status</div>
+      <div class="grid-2 field-group">
+        <div>
+          <label>Connected WTGs</label>
+          <input type="text" id="connCount" placeholder="251" />
+        </div>
+        <div>
+          <label>Total WTGs</label>
+          <input type="text" id="totalCount" placeholder="275" />
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:#00ff88;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">
+        Connectivity Issues
+      </div>
+      <div id="issues-container"></div>
+      <button class="btn-add" onclick="addIssue()">+ Add Issue</button>
+    </div>
+
+    <!-- Summary -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Summary</div>
+      <div class="grid-2">
+        <div>
+          <label>Avg Wind Speed (m/s)</label>
+          <input type="text" id="windSpeed" placeholder="3.2" />
+        </div>
+        <div>
+          <label>Critical Observation</label>
+          <input type="text" id="criticalObs" value="NIL" />
+        </div>
+        <div>
+          <label>Case Comment Status</label>
+          <select id="caseStatus">
+            <option>Updated</option>
+            <option>Pending</option>
+            <option>N/A</option>
+          </select>
+        </div>
+        <div>
+          <label>Excel BD Sheet Update</label>
+          <select id="excelUpdate">
+            <option>Updated</option>
+            <option>Pending</option>
+            <option>N/A</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn-primary btn-full" onclick="showPreview()">Generate Report →</button>
+      <button class="btn-secondary" id="quick-copy-btn" onclick="quickCopy()" style="white-space:nowrap;">📋 Copy</button>
+    </div>
+  </div>
+
+  <!-- PREVIEW TAB -->
+  <div class="tab-panel" id="tab-preview">
+    <div class="preview-actions">
+      <button class="btn-primary" id="copy-btn" onclick="copyReport()">📋 Copy for WhatsApp</button>
+      <button class="btn-secondary" onclick="downloadExcel()">📊 Download Excel</button>
+      <button class="btn-secondary" onclick="switchTab('form')">← Edit Form</button>
+    </div>
+    <div class="preview-box">
+      <div class="preview-label">Preview — WhatsApp / Telegram Format</div>
+      <div id="preview-output"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ─── Issue counter ───────────────────────────────────────────────────────────
+  let issueCount = 0;
+
+  const ISSUE_TYPES = [
+    "OFC issue",
+    "Connectivity Cut",
+    "SCADA / AE issue",
+    "Connectivity Cut - OFC Issue",
+    "Other"
+  ];
+
+  function addIssue() {
+    issueCount++;
+    const idx = issueCount;
+    const container = document.getElementById("issues-container");
+
+    const card = document.createElement("div");
+    card.className = "issue-card";
+    card.id = `issue-card-${idx}`;
+
+    card.innerHTML = `
+      <div class="issue-header">
+        <span class="issue-num">Issue #${idx}</span>
+        <button class="btn-danger" onclick="removeIssue(${idx})">✕ Remove</button>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label>WTG IDs</label>
+        <input type="text" id="wtg-ids-${idx}" placeholder="TP175, TK135, VP16..." />
+      </div>
+      <div class="grid-3">
+        <div>
+          <label>Issue Type</label>
+          <select id="issue-type-${idx}">
+            ${ISSUE_TYPES.map(t => `<option>${t}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="text" id="issue-date-${idx}" placeholder="28-03-2026" />
+        </div>
+        <div>
+          <label>Time</label>
+          <input type="text" id="issue-time-${idx}" placeholder="13:29" />
+        </div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  }
+
+  function removeIssue(idx) {
+    const card = document.getElementById(`issue-card-${idx}`);
+    if (card) card.remove();
+  }
+
+  function getVal(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  // ─── Collect all issues ──────────────────────────────────────────────────────
+  function getIssues() {
+    const issues = [];
+    const cards = document.querySelectorAll(".issue-card");
+    cards.forEach((card) => {
+      const idStr = card.id.replace("issue-card-", "");
+      const wtgIds = getVal(`wtg-ids-${idStr}`);
+      if (!wtgIds) return;
+      issues.push({
+        wtgIds,
+        issueType: getVal(`issue-type-${idStr}`),
+        date: getVal(`issue-date-${idStr}`),
+        time: getVal(`issue-time-${idStr}`),
+      });
+    });
+    return issues;
+  }
+
+  // ─── Generate message ────────────────────────────────────────────────────────
+  function generateMessage() {
+    const terminal     = getVal("terminal");
+    const date         = getVal("date");
+    const shift        = getVal("shift");
+    const monitor      = getVal("monitor");
+    const wtgStopped   = getVal("wtgStopped").padStart(2, "0");
+    const wtgMajor     = getVal("wtgMajor").padStart(2, "0");
+    const feederBD     = getVal("feederBD") || "NIL";
+    const feederLC     = getVal("feederLC") || "NIL";
+    const reducedCount = getVal("reducedCount");
+    const reducedWTGs  = getVal("reducedWTGs");
+    const connCount    = getVal("connCount");
+    const totalCount   = getVal("totalCount");
+    const criticalObs  = getVal("criticalObs") || "NIL";
+    const windSpeed    = getVal("windSpeed");
+    const caseStatus   = getVal("caseStatus");
+    const excelUpdate  = getVal("excelUpdate");
+    const lastPark     = getVal("lastPark");
+
+    const noReduced = reducedCount === "00" || reducedCount === "0" || reducedCount === "NIL" || reducedCount === "";
+    const reducedLine = noReduced
+      ? `♻️Any Reduced Power: NIL`
+      : `♻️Any Reduced Power: ${reducedCount} [ ${reducedWTGs} ]`;
+
+    const issues = getIssues();
+    const issueLines = issues
+      .map((i, idx) => `${idx + 1}.${i.wtgIds} - ${i.issueType} - ${i.date} - ${i.time}`)
+      .join("\n");
+
+    return `🖥️𝗧𝗲𝗿𝗺𝗶𝗻𝗮𝗹 𝗦𝘁𝗮𝘁𝘂𝘀: ${terminal}
+
+📆Dᴀᴛᴇ : ${date}
+
+⏰Sʜɪғᴛ : ${shift}
+
+👨🏻‍💻 Tᴇʀᴍɪɴᴀʟ Mᴏɴɪᴛᴏʀᴇᴅ ʙʏ: ${monitor}
+
+⭕WTGs Sᴛᴏᴘᴘᴇᴅ: ${wtgStopped} WTGs (Major: ${wtgMajor} WTG)
+
+⛓️‍💥Nᴏ. ᴏғ Fᴇᴇᴅᴇʀ BD: ${feederBD}
+
+⛓️‍💥Nᴏ. ᴏғ Fᴇᴇᴅᴇʀ LC: ${feederLC}
+
+${reducedLine}
+
+🛠  *Connectivity Status : ${connCount} / ${totalCount}*
+
+${issueLines}
+
+⁉️Aɴʏ Cʀɪᴛɪᴄᴀʟ Oʙsᴇʀᴠᴀᴛɪᴏɴ : ${criticalObs}
+
+🌬️Aᴠᴇʀᴀɢᴇ Wɪɴᴅ Sᴘᴇᴇᴅ: ${windSpeed} m/s
+
+🚦Cᴀsᴇ Cᴏᴍᴍᴇɴᴛ Sᴛᴀᴛᴜs : ${caseStatus}
+
+📈Exᴄᴇʟ BD Sʜᴇᴇᴛ Uᴘᴅᴀᴛᴇ: ${excelUpdate}
+
+👀 Lᴀsᴛ Pᴀʀᴋ Mᴏɴɪᴛᴏʀɪɴɢ Tɪᴍᴇ : ${lastPark}`;
+  }
+
+  // ─── Show preview ────────────────────────────────────────────────────────────
+  function showPreview() {
+    const msg = generateMessage();
+    document.getElementById("preview-output").textContent = msg;
+    switchTab("preview");
+  }
+
+  // ─── Copy ────────────────────────────────────────────────────────────────────
+  function copyText(text, btnId, originalLabel) {
+    const btn = document.getElementById(btnId);
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "✅ Copied!";
+        setTimeout(() => { btn.textContent = originalLabel; }, 2000);
+      });
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand("copy");
+        btn.textContent = "✅ Copied!";
+        setTimeout(() => { btn.textContent = originalLabel; }, 2000);
+      } catch(e) {
+        alert("Copy failed — manually select pannitu copy pannu.");
+      }
+      document.body.removeChild(ta);
+    }
+  }
+
+  function copyReport() {
+    copyText(generateMessage(), "copy-btn", "📋 Copy for WhatsApp");
+  }
+
+  // ─── Excel download ──────────────────────────────────────────────────────────
+  function downloadExcel() {
+    const msg = generateMessage();
+    const rows = msg.split("\n").map(line => [line]);
+
+    const ws1 = XLSX.utils.aoa_to_sheet([["Shift Report"], [], ...rows]);
+    ws1["!cols"] = [{ wch: 80 }];
+
+    const issues = getIssues();
+    const issueData = issues.map((i, idx) => ({
+      "S.No":       idx + 1,
+      "WTG IDs":    i.wtgIds,
+      "Issue Type": i.issueType,
+      "Date":       i.date,
+      "Time":       i.time,
+    }));
+    const ws2 = XLSX.utils.json_to_sheet(issueData.length ? issueData : [{ Note: "No issues logged" }]);
+    ws2["!cols"] = [{ wch: 5 }, { wch: 50 }, { wch: 30 }, { wch: 15 }, { wch: 10 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, "Shift Report");
+    XLSX.utils.book_append_sheet(wb, ws2, "Connectivity Issues");
+
+    const dateStr = getVal("date").replace(/\//g, "-") || "report";
+    XLSX.writeFile(wb, `Shift_Report_${dateStr}.xlsx`);
+  }
+
+  // ─── Tab switcher ────────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(`tab-${tab}`).classList.add("active");
+    document.querySelectorAll(".tab-btn").forEach(b => {
+      if (b.textContent.toLowerCase().includes(tab === "form" ? "form" : "preview")) {
+        b.classList.add("active");
+      }
+    });
+  }
+
+  // ─── Init: add one issue row by default ─────────────────────────────────────
+  addIssue();
+
+  // ─── Quick copy from form tab ────────────────────────────────────────────────
+  function quickCopy() {
+    copyText(generateMessage(), "quick-copy-btn", "📋 Copy");
+  }
+
+  // ─── Auto current date ───────────────────────────────────────────────────────
+  (function setCurrentDate() {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, "0");
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const yy = String(now.getFullYear()).slice(2);
+    document.getElementById("date").value = `${dd}/${mm}/${yy}`;
+  })();
+
+  // ─── Shift → Last Park Time auto-fill ───────────────────────────────────────
+  const SHIFT_TIMES = { First: "04:30", Second: "22:00", Third: "08:00" };
+
+  function onShiftChange() {
+    const shift = document.getElementById("shift").value;
+    document.getElementById("lastPark").value = SHIFT_TIMES[shift] || "";
+  }
+
+  // Set default on load
+  onShiftChange();
+</script>
+</body>
+</html>
