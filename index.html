@@ -230,7 +230,7 @@
     <div class="logo">⚡ SHIFT REPORT</div>
     <div class="logo-sub">TERMINAL MONITORING AUTOMATION</div>
   </div>
-  <div class="header-right">🌬️ Wind Farm Operations</div>
+  <div class="header-right">🌬️ Suzlon Energy Limited</div>
 </header>
 
 <div class="tabs">
@@ -259,15 +259,16 @@
           <label>Monitored By</label>
           <select id="monitor">
             <option value="">-- Select --</option>
-            <option>Satheesh Vinnarasan</option>
-            <option>Sahaya Ditto</option>
-            <option>Velmurugan</option>
-            <option>Saravanan</option>
-            <option>Moorthy</option>
-            <option>Esakki Archana</option>
+            <option>Satheesh Vinnarasan T</option>
+            <option>S.Sahaya Ditto</option>
+            <option>I.Velmurugan
+          </option>
+            <option>M.Saravanan</option>
+            <option>P.Kalugasala Moorthy</option>
+            <option>A.Esakki Archana</option>
             <option>Vijayapathi</option>
-            <option>Lakshmi</option>
-            <option>Dhanusiya</option>
+            <option>Lakshmi Lakshmanan</option>
+            <option>J.Dhanusiya</option>
           </select>
         </div>
       </div>
@@ -282,6 +283,7 @@
             <option>First</option>
             <option selected>Second</option>
             <option>Third</option>
+           <option>General</option>
           </select>
         </div>
         <div>
@@ -504,8 +506,8 @@
       .map((i, idx) => `${idx + 1}.${i.wtgIds} - ${i.issueType} - ${i.date} - ${i.time}`)
       .join("\n");
 
-    return `🖥️Terminal Monitoring Status
-    📌 *${terminal}**
+    return `🖥️*Terminal Monitoring Status*
+📌 *${terminal}*
 
 📆 *Date : ${date}*
 🕟 *Sʜɪғᴛ : ${shift} Shift*
@@ -514,7 +516,7 @@
 🚫 *WTG Stopped : ${wtgStopped} WTGs (Major: ${wtgMajor} WTG)*
 ⚡ *Feeder BD : ${feederBD}*
 🔌 *Feeder LC : ${feederLC}*
-♻️ *${reducedLine}*
+*${reducedLine}*
 ⚠️ *Critical Observation : ${criticalObs}*
 📡 *Connectivity Status : ${connCount} / ${totalCount}*
 
@@ -620,7 +622,7 @@ ${issueLines}
   })();
 
   // ─── Shift → Last Park Time auto-fill ───────────────────────────────────────
-  const SHIFT_TIMES = { First: "04:30", Second: "22:00", Third: "08:00" };
+  const SHIFT_TIMES = { First: "16:30", Second: "22:00", Third: "08:00", General: "19:00"};
 
   function onShiftChange() {
     const shift = document.getElementById("shift").value;
